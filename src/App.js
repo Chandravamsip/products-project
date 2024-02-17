@@ -7,9 +7,10 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [error, setError] = useState("");
   const [products, setProducts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -34,30 +35,6 @@ function App() {
       console.error("Failed to fetch products:", error);
     }
   };
-
-  const filterProducts = () => {
-    let filtered = products;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (product) =>
-          product.title.toLowerCase().includes(query) ||
-          product.description.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  };
-
-  const sliceProducts = () => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const sliced = filterProducts().slice(indexOfFirstItem, indexOfLastItem);
-    return sliced;
-  };
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleRegistration = async () => {
     alert("User registered successfully!");
@@ -86,42 +63,89 @@ function App() {
     setProducts([]);
   };
 
-  const handleSearch = (e) => setSearchQuery(e.target.value);
+  const toggleSortOrder = () => {
+    setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+  };
+
+  const filterAndSortProducts = () => {
+    let filteredAndSorted = products;
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filteredAndSorted = filteredAndSorted.filter(
+        (product) =>
+          product.title.toLowerCase().includes(query) ||
+          product.description.toLowerCase().includes(query)
+      );
+    }
+
+    filteredAndSorted = filteredAndSorted.sort((a, b) => {
+      const orderFactor = sortOrder === "asc" ? 1 : -1;
+      return orderFactor * (a.price - b.price);
+    });
+
+    return filteredAndSorted;
+  };
+
+  const sliceProducts = () => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    return filterAndSortProducts().slice(indexOfFirstItem, indexOfLastItem);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-96">
+      <div className="bg-white p-8 rounded shadow-md">
         {loggedIn ? (
           <>
-            <p className="text-xl mb-4">Welcome, User! You are logged in.</p>
+            <p className="text-xl">Welcome, User! You are logged in.</p>
             <div>
-              <h2 className="text-lg font-semibold mb-2">
+              <h2 className="text-lg font-semibold mt-4">
                 Available Products:
               </h2>
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="p-2 border rounded mb-4 w-full"
-                onChange={handleSearch}
-              />
+              <div>
+                <input
+                  type="text"
+                  placeholder="Search by name or description"
+                  className="mt-2 p-2 border rounded"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button
+                  className="bg-blue-500 text-white p-2 rounded ml-2"
+                  onClick={() => setCurrentPage(1)}
+                >
+                  Search
+                </button>
+              </div>
+              <div className="mt-2">
+                <button
+                  className="bg-yellow-500 text-white p-2 rounded ml-2"
+                  onClick={toggleSortOrder}
+                >
+                  {sortOrder === "asc" ? "Sort Desc" : "Sort Asc"}
+                </button>
+              </div>
               <ul>
                 {sliceProducts().map((product) => (
-                  <li key={product.id} className="mb-2">
+                  <li key={product.id}>
                     {product.title} - ${product.price}
                   </li>
                 ))}
               </ul>
-              <nav className="mt-4">
-                <ul className="flex">
-                  {Array.from({ length: Math.ceil(filterProducts().length / itemsPerPage) }, (_, index) => (
-                    <li key={index} className={`mx-1 ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-300'}`}>
-                      <a href="#!" className="block px-3 py-1" onClick={() => paginate(index + 1)}>
-                        {index + 1}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
+              <div className="mt-4">
+                {Array.from({ length: Math.ceil(filterAndSortProducts().length / itemsPerPage) }).map((_, index) => (
+                  <button
+                    key={index}
+                    className={`mr-2 p-2 ${
+                      currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"
+                    } rounded`}
+                    onClick={() => setCurrentPage(index + 1)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
             </div>
             <button
               className="bg-red-500 text-white p-2 rounded mt-4"
