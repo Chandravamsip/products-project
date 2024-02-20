@@ -1,7 +1,13 @@
 import axios from "axios";
 import React, { useState, useEffect } from "react";
 
-function App() {
+const ProductItem = ({ product, onClick }) => (
+  <li key={product.id} onClick={() => onClick(product)}>
+    <span className="cursor-pointer text-blue-500 underline">{product.title}</span> - ${product.price}
+  </li>
+);
+
+const App = () => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
@@ -22,8 +28,9 @@ function App() {
     username: "",
     password: "",
     birthDate: "",
-    // Add more fields from the provided data structure
   });
+
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -49,8 +56,6 @@ function App() {
     }
   };
 
-  // ... (previous code)
-
   const handleRegistration = async () => {
     try {
       const response = await axios.post(
@@ -63,8 +68,6 @@ function App() {
       console.error("Registration failed:", error);
     }
   };
-
-  // ... (remaining code)
 
   const handleLogin = async () => {
     try {
@@ -147,11 +150,20 @@ function App() {
                     currentPage * itemsPerPage
                   )
                   .map((product) => (
-                    <li key={product.id}>
-                      {product.title} - ${product.price}
-                    </li>
+                    <ProductItem
+                      key={product.id}
+                      product={product}
+                      onClick={setSelectedProduct}
+                    />
                   ))}
               </ul>
+
+              {selectedProduct && (
+                <div className="mt-4">
+                  <h2 className="text-lg font-semibold">Product Description:</h2>
+                  <p>{selectedProduct.description}</p>
+                </div>
+              )}
 
               <div className="mt-4 flex">
                 {Array.from({
